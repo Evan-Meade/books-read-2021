@@ -1,0 +1,187 @@
+---
+title: "Books Read 2021"
+author: "Evan Meade"
+date: "1/1/2022"
+output:
+  html_fragment:
+    self_contained: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r init, echo=FALSE}
+library(ggplot2)
+library(RColorBrewer)
+library(ggthemes)
+
+books_2020 <- read.csv("books_2020.csv")
+books <- read.csv("books_2021.csv")
+match_2021 <- subset(books_2021, select=-c(genre.2, date.completed))
+books_compare <- rbind(books_2020, match_2021)
+```
+
+```{r stats, echo=FALSE, results='hide'}
+# This code is pulled directly from the 2020 analysis
+
+# Legacy column
+books$genre <- books$genre.1
+
+# 
+# Exploration of the data
+# 
+
+# Basic statistics
+summary(books)
+print(paste0("Estimated hours read: ", sum(books$pages) / 25))
+
+# Histogram of page length
+page_hist <- ggplot(data = books) +
+  geom_histogram(mapping = aes(x = pages), binwidth = 200) +
+  labs(title = "Book Length Histogram")
+print(page_hist)
+
+# Histogram of year published
+year_hist <- ggplot(data = books) +
+  geom_histogram(mapping = aes(x = year.published), binwidth = 10) +
+  labs(title = "Year Published Histogram")
+print(year_hist)
+
+# Scatter of page length and year published
+len_year_scatter <- ggplot(data = books) +
+  geom_point(mapping = aes(x = year.published, y = pages)) +
+  labs(title = "Book Length vs. Year Published")
+print(len_year_scatter)
+
+# Feature for total number of pages read that year
+books[1, "pages.total"] <- books[1, "pages"]
+for (i in 2:nrow(books)) {
+  books[i, "pages.total"] <- books[i, "pages"] + books[i - 1, "pages.total"]
+}
+
+# Total pages read over time
+total_pages_line <- ggplot(data = books) +
+  geom_line(mapping = aes(x = order, y = pages.total)) +
+  labs(title = "Total Pages Read")
+print(total_pages_line)
+
+# Pages read in order
+page_mean <- mean(books$pages)
+books$pages.mean <- cut(books$pages, c(0, page_mean, max(books$pages)),
+                        labels = c("below", "above"))
+pages_bar <- ggplot(data = books) +
+  geom_bar(mapping = aes(x = order, y = pages, fill = pages.mean),
+           stat = "identity") +
+  geom_hline(yintercept = mean(books$pages)) +
+  labs(title = "Page Length in Order")
+print(pages_bar)
+
+# Pages per author
+pages_bar <- ggplot(data = books) +
+  geom_bar(mapping = aes(x = author, y = pages), stat = "identity") +
+  labs(title = "Pages Read by Author")
+print(pages_bar)
+
+# Percent of pages done by each author
+author_bar <- ggplot(data = books) +
+  geom_bar(mapping = aes(x = "Author", y = pages, fill = author),
+           stat = "identity",
+           position = "fill") +
+  labs(title = "Authors' Proportions of Pages Read")
+print(author_bar)
+
+# Bar chart of genres
+unique_genres <- sort(unique(books$genre))
+genres <- data.frame()
+for (i in 1:length(unique_genres)) {
+  genres[2 * i - 1, "genre"] <- unique_genres[i]
+  genres[2 * i - 1, "type"] <- "# of Books"
+  genres[2 * i - 1, "weight"] <- length(which(books$genre == unique_genres[i])) / nrow(books)
+  
+  genres[2 * i, "genre"] <- unique_genres[i]
+  genres[2 * i, "type"] <- "# of Pages"
+  genres[2 * i, "weight"] <- sum(books$pages[which(books$genre == unique_genres[i])]) / sum(books$pages)
+}
+genre_bar <- ggplot(data = genres) +
+  theme_fivethirtyeight() +
+  geom_bar(mapping = aes(x = type, y = weight, fill = genre), stat = "identity") +
+  labs(title = "Genre Breakdown, Weighted by")
+print(genre_bar)
+
+# Genre mean page lengths
+genre_lengths <- ggplot(data = aggregate(pages ~ genre, books, mean)) +
+  geom_bar(mapping = aes(x = genre, y = pages, fill = genre), stat = "identity")
+print(genre_lengths)
+
+# Genres read in order
+genres_bar <- ggplot(data = books) +
+  geom_bar(mapping = aes(x = order, y = pages, fill = genre),
+           stat = "identity") +
+  geom_hline(yintercept = mean(books$pages)) +
+  labs(title = "Genres Read in Order")
+print(genres_bar)
+```
+![Bookshelf](bookshelf_cover.jpg)
+
+Back in 2020, I decided to keep track of every book I read and publish the results at the end of the year along with some cool visualizations. Not to pat myself on the back too much, but I think it turned out pretty well; you can see the full article [here](https://keypair.xyz/posts/2020_my_year_in_books). Basically, I read 26 books, primarily in the form of very long sci-fi from Liu Cixin and Neal Stephenson. Anyways, I liked the results so much that I decided to continue the practice as an annual tradition. In addition to producing pretty plots, I find that it incentivizes me to read more, something I have been trying to do for years. After all, it's the old idea that to improve something, you first have to measure it.
+
+Anyways, I'll stop waxing philosophical and just get into the results. The big headline this year is that I read a lot less than last year. As pandemic restrictions loosened, I found myself spending a lot less time alone in my room, and a lot more time hanging out with my friends. While this isn't necessarily a bad thing, I still wish I had spent a bit more time reading, or at the very least read more consistently. In 2021, I read
+
+## 13 books
+
+In other words, about a book a month. In addition to spending more time with friends, I also spent more time on YouTube this year. That website is by far my greatest vice, and I go through cycles of time wasting on there. I've thought about including my time spent on YouTube as a comparision to my time spent reading, but in addition to it probably being really depressing, I  have never been fully impressed with Apple's Screen Time tracking. It just doesn't seem to consistently add up over all my devices, even though I have it set to.
+
+While it may not have been the banner year for reading that lockdown 2020 was, this is a number of books that I'm still fine with. There will be some more stats, visualizations, and comparisons below, but after that is a list of my favorite books from the year. So if you want to skip down to some recommendations, feel free to just scroll past the plots.
+
+## By the numbers
+
+Here are a few more key stats:
+
+* 13 books read
+* 4,103 pages read
+* ~164 hours of reading (I read at ~25 pages/hour)
+
+All of these numbers are about half of what they were in 2020, reflecting that overall trend of less reading. However, one statistic which is basically unchanged is mean book length. This year, the mean was **~316 pages**, while last year it was ~335 pages.
+
+
+
+
+## My favorite reads of the year
+
+*NOTE: All book covers depicted here belong to their respective copyright owners*
+
+aiguahdsfj!!!!!!!!!!!!!
+
+### 5. Hillbilly Elegy, *J.D. Vance*
+
+
+### 4. Circe, *Madeline Miller*
+
+### 3. Flash Boys, *Micheal Lewis*
+
+### 2. Superforecasting, *Philip E. Tetlock & Dan Gardner*
+
+### 1. This Is How They Tell Me the World Ends, *Nicole Perlroth*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
